@@ -3,43 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>피부양자 판독기 — Dependent Checker</title>
+<title>피부양자 판독기 v3</title>
 <style>
 :root {
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F5F3EE;
-  --bg-page: #FAFAF7;
-  --text-primary: #1F1E1A;
-  --text-secondary: #6F6E68;
-  --text-tertiary: #A8A69E;
-  --border: rgba(0,0,0,0.15);
-  --border-strong: rgba(0,0,0,0.3);
+  /* 베이스 (B 톤 - 웜 아이보리 + 잉크 네이비) */
+  --bg-primary: #FFFDF6;      /* 카드 배경 (따뜻한 화이트) */
+  --bg-secondary: #EDE5D0;    /* 서브헤더·notes·kbd-hint (짙은 아이보리) */
+  --bg-page: #F8F4EA;         /* 페이지 배경 (웜 아이보리) */
+  --text-primary: #15213D;    /* 잉크 네이비 */
+  --text-secondary: #5A6480;
+  --text-tertiary: #94A3B8;
+  --border: rgba(21, 33, 61, 0.14);
+  --border-strong: rgba(21, 33, 61, 0.28);
+  --focus-ring: #2D4A8C;
   --radius-md: 8px;
   --radius-lg: 12px;
-  --amber-bg: #FAEEDA;
-  --amber-border: #BA7517;
-  --amber-text-bg: #854F0B;
-  --amber-text-strong: #412402;
-  --teal-bg: #E1F5EE;
-  --teal-border: #1D9E75;
+
+  /* 결과 박스 - 톤다운된 색상 (아이보리 베이스에 맞춤) */
+  --amber-bg: #F2E5C8;
+  --amber-border: #A66B0F;
+  --amber-text-bg: #6B3F08;
+  --amber-text-strong: #2E1A02;
+
+  --teal-bg: #DEECE4;
+  --teal-border: #0F6E56;
   --teal-text-bg: #0F6E56;
   --teal-text-strong: #04342C;
-  --red-bg: #FCEBEB;
-  --red-border: #E24B4A;
-  --red-text-bg: #791F1F;
-  --red-text-strong: #501313;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary: #1F1F1D;
-    --bg-secondary: #2A2A28;
-    --bg-page: #161614;
-    --text-primary: #F5F4F0;
-    --text-secondary: #B5B4AD;
-    --text-tertiary: #6F6E68;
-    --border: rgba(255,255,255,0.15);
-    --border-strong: rgba(255,255,255,0.3);
-  }
+
+  --red-bg: #F4D8D8;
+  --red-border: #C03A3A;
+  --red-text-bg: #6E1A1A;
+  --red-text-strong: #401010;
 }
 * { box-sizing: border-box; }
 body {
@@ -50,15 +44,69 @@ body {
   font-size: 14px;
   line-height: 1.5;
 }
-.container { max-width: 720px; margin: 0 auto; padding: 1.5rem 1rem; }
-.header {
+.container { max-width: 720px; margin: 0 auto; padding: 1rem 1rem 1.5rem; }
+
+/* ============ APP HEADER ============ */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 4px 0;
+  margin-bottom: 1rem;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.app-header h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.update-time {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  white-space: nowrap;
+}
+.icon-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.icon-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+.icon-btn:active { transform: scale(0.92); }
+.icon-btn svg { width: 18px; height: 18px; }
+.icon-btn.reset-btn:hover { color: var(--red-border); }
+
+/* ============ 서브헤더 ============ */
+.subheader {
   background: var(--bg-secondary);
   border-radius: var(--radius-lg);
-  padding: 1rem 1.25rem;
-  margin-bottom: 1.25rem;
+  padding: 10px 14px;
+  margin-bottom: 1rem;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
-.header h1 { margin: 0 0 4px; font-size: 16px; font-weight: 500; }
-.header p { margin: 0; font-size: 13px; color: var(--text-secondary); }
+.subheader b { color: var(--text-primary); font-weight: 500; }
+
 .section-label { margin: 1rem 0 8px; font-size: 13px; font-weight: 500; color: var(--text-secondary); }
 .helper-text {
   margin: 0 0 1rem;
@@ -69,7 +117,7 @@ body {
 }
 input[type="text"], select {
   width: 100%;
-  padding: 6px 10px;
+  padding: 6px 8px;
   border: 0.5px solid var(--border);
   border-radius: 6px;
   background: var(--bg-primary);
@@ -79,29 +127,21 @@ input[type="text"], select {
 }
 input[type="text"] { text-align: right; }
 input:focus, select:focus {
-  outline: 2px solid var(--amber-border);
+  outline: 2px solid var(--focus-ring);
   outline-offset: -1px;
-  border-color: var(--amber-border);
+  border-color: var(--focus-ring);
 }
-button {
-  background: transparent;
-  border: 0.5px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
-  font-family: inherit;
-  cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
-}
-button:hover { background: var(--bg-secondary); }
-button:active { transform: scale(0.98); }
-.grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 1rem; }
+
+/* ============ 그리드 (모바일에서도 grid-4 유지) ============ */
+.grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 0.75rem; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 0.75rem; align-items: stretch; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
 .small-box {
   background: var(--bg-primary);
   border: 0.5px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 8px 10px;
+  padding: 6px 8px;
+  min-width: 0;
 }
 .small-box p {
   margin: 0 0 4px;
@@ -109,7 +149,12 @@ button:active { transform: scale(0.98); }
   font-weight: 500;
   line-height: 1.3;
   color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+.small-box select { font-size: 12px; padding: 5px 6px; }
+
 .input-box {
   background: var(--bg-primary);
   border: 0.5px solid var(--border);
@@ -147,7 +192,7 @@ button:active { transform: scale(0.98); }
   align-items: center;
   margin-bottom: 12px;
   padding-bottom: 12px;
-  border-bottom: 0.5px solid rgba(0,0,0,0.1);
+  border-bottom: 0.5px solid rgba(21,33,61,0.10);
 }
 .status-label { font-size: 13px; font-weight: 500; }
 .status-badge {
@@ -158,14 +203,14 @@ button:active { transform: scale(0.98); }
   color: #FFFFFF;
 }
 .warn .status-label { color: var(--amber-text-bg); }
-.warn .status-badge { background: var(--amber-border); }
+.warn .status-badge { background: var(--amber-border); color: #FFFCF5; }
 .success .status-label { color: var(--teal-text-bg); }
-.success .status-badge { background: var(--teal-border); }
+.success .status-badge { background: var(--teal-border); color: #E1F5EE; }
 .danger .status-label { color: var(--red-text-bg); }
-.danger .status-badge { background: var(--red-border); }
+.danger .status-badge { background: var(--red-border); color: #FCEBEB; }
 .amount-row { display: flex; justify-content: space-between; align-items: baseline; }
 .amount-label { font-size: 12px; }
-.amount-value { font-size: 24px; font-weight: 500; }
+.amount-value { font-size: 24px; font-weight: 500; letter-spacing: -0.3px; }
 .warn .amount-label { color: var(--amber-text-bg); }
 .warn .amount-value { color: var(--amber-text-strong); }
 .success .amount-label { color: var(--teal-text-bg); }
@@ -183,9 +228,9 @@ button:active { transform: scale(0.98); }
   border-radius: var(--radius-md);
   padding: 12px 14px;
 }
-.trigger-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.trigger-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 8px; }
 .trigger-title { font-size: 13px; font-weight: 500; }
-.trigger-status { font-size: 12px; padding: 2px 8px; border-radius: var(--radius-md); }
+.trigger-status { font-size: 12px; padding: 2px 8px; border-radius: var(--radius-md); white-space: nowrap; }
 .status-pass { background: var(--teal-bg); color: var(--teal-text-bg); }
 .status-fail { background: var(--red-bg); color: var(--red-text-bg); }
 .trigger-detail { margin: 0; font-size: 12px; color: var(--text-secondary); }
@@ -212,18 +257,75 @@ button:active { transform: scale(0.98); }
   font-size: 10px;
   color: var(--text-secondary);
 }
+
+/* ============ 토스트 ============ */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text-primary);
+  color: var(--bg-page);
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 1000;
+  box-shadow: 0 4px 16px rgba(21,33,61,0.15);
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ============ 반응형 ============ */
 @media (max-width: 600px) {
-  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .container { padding: 0.75rem 0.625rem 1.25rem; }
+  .app-header h1 { font-size: 15px; }
+  .update-time { font-size: 11px; }
+  .icon-btn { width: 28px; height: 28px; }
+  .icon-btn svg { width: 16px; height: 16px; }
+
+  .grid-4 { gap: 4px; }
+  .small-box { padding: 5px 6px; }
+  .small-box p { font-size: 10px; }
+  .small-box select { font-size: 11px; padding: 4px 4px; }
+
   .grid-3 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 360px) {
+  .update-time { display: none; }
 }
 </style>
 </head>
 <body>
 <div class="container">
 
-  <div class="header">
+  <header class="app-header">
     <h1>피부양자 판독기</h1>
-    <p>국민건강보험법 시행규칙 별표1의2 · 자격 유지/박탈 자동 판정 + 사업소득 잔액 계산</p>
+    <div class="header-actions">
+      <span class="update-time" id="updateTime">업데이트 2026-05-16 13:24</span>
+      <button class="icon-btn" id="reloadBtn" title="강제 새로고침 (페이지 리로드)" aria-label="강제 새로고침">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+      </button>
+      <button class="icon-btn reset-btn" id="resetBtn" title="입력 초기화 (모든 값을 0으로)" aria-label="입력 초기화">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="subheader">
+    국민건강보험법 시행규칙 별표1의2 · <b>자격 유지/박탈 자동 판정</b> + 사업소득 잔액 계산
   </div>
 
   <p class="section-label">기본 조건</p>
@@ -236,14 +338,14 @@ button:active { transform: scale(0.98); }
       </select>
     </div>
     <div class="small-box">
-      <p>② 주택임대소득</p>
+      <p>② 주택임대</p>
       <select id="rental">
         <option value="N">없음</option>
         <option value="Y">있음</option>
       </select>
     </div>
     <div class="small-box">
-      <p>③ 장애·유공자</p>
+      <p>③ 장애·유공</p>
       <select id="disabled">
         <option value="N">해당없음</option>
         <option value="Y">해당</option>
@@ -389,9 +491,14 @@ button:active { transform: scale(0.98); }
 
 </div>
 
+<div class="toast" id="toast">초기화되었습니다</div>
+
 <script>
 const fmt = n => new Intl.NumberFormat('ko-KR').format(Math.round(n));
 const getNum = (id) => Number(document.getElementById(id).value.replace(/,/g, '')) || 0;
+
+const UPDATE_TIME = '2026-05-16 13:24';
+document.getElementById('updateTime').textContent = '업데이트 ' + UPDATE_TIME;
 
 function pensionDeduction(amt) {
   let d;
@@ -481,6 +588,34 @@ ENTER_ORDER.forEach(id => {
   document.getElementById(id).addEventListener('change', calc);
 });
 
+document.getElementById('reloadBtn').addEventListener('click', () => {
+  location.reload();
+});
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1600);
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  ENTER_ORDER.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '0';
+  });
+  ['bizReg', 'rental', 'disabled', 'relation', 'privateMode'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.selectedIndex = 0;
+  });
+  calc();
+  setTimeout(() => {
+    const first = document.getElementById('finIncome');
+    if (first) { first.focus(); first.select(); }
+  }, 50);
+  showToast('초기화되었습니다');
+});
+
 function calc() {
   const bizReg = document.getElementById('bizReg').value === 'Y';
   const rental = document.getElementById('rental').value === 'Y';
@@ -549,7 +684,6 @@ function calc() {
   const isDQ = rental || isBizOver || isBizLimitOver || isIncomeOver || isFinanceOver || propDQ;
   const final = Math.min(bizRemaining, totalRemaining);
 
-  document.getElementById('result');
   const finalBox = document.getElementById('finalBox');
   const statusBadge = document.getElementById('statusBadge');
   const amountLabel = document.getElementById('amountLabel');
