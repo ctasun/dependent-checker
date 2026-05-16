@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>피부양자 판독기 — Dependent Checker</title>
+<style>
+:root {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F5F3EE;
+  --bg-page: #FAFAF7;
+  --text-primary: #1F1E1A;
+  --text-secondary: #6F6E68;
+  --text-tertiary: #A8A69E;
+  --border: rgba(0,0,0,0.15);
+  --border-strong: rgba(0,0,0,0.3);
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --amber-bg: #FAEEDA;
+  --amber-border: #BA7517;
+  --amber-text-bg: #854F0B;
+  --amber-text-strong: #412402;
+  --teal-bg: #E1F5EE;
+  --teal-border: #1D9E75;
+  --teal-text-bg: #0F6E56;
+  --teal-text-strong: #04342C;
+  --red-bg: #FCEBEB;
+  --red-border: #E24B4A;
+  --red-text-bg: #791F1F;
+  --red-text-strong: #501313;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1F1F1D;
+    --bg-secondary: #2A2A28;
+    --bg-page: #161614;
+    --text-primary: #F5F4F0;
+    --text-secondary: #B5B4AD;
+    --text-tertiary: #6F6E68;
+    --border: rgba(255,255,255,0.15);
+    --border-strong: rgba(255,255,255,0.3);
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.container { max-width: 720px; margin: 0 auto; padding: 1.5rem 1rem; }
+.header {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.header h1 { margin: 0 0 4px; font-size: 16px; font-weight: 500; }
+.header p { margin: 0; font-size: 13px; color: var(--text-secondary); }
+.section-label { margin: 1rem 0 8px; font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+.helper-text {
+  margin: 0 0 1rem;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+input[type="text"], select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+}
+input[type="text"] { text-align: right; }
+input:focus, select:focus {
+  outline: 2px solid var(--amber-border);
+  outline-offset: -1px;
+  border-color: var(--amber-border);
+}
+button {
+  background: transparent;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+button:hover { background: var(--bg-secondary); }
+button:active { transform: scale(0.98); }
+.grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 1rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 0.75rem; align-items: stretch; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+.small-box {
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+}
+.small-box p {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--text-secondary);
+}
+.input-box {
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+}
+.input-box.amber { border-color: var(--amber-border); }
+.input-box .label { margin: 0 0 4px; font-size: 11px; font-weight: 500; color: var(--text-secondary); }
+.input-box .sub { margin: 0 0 6px; font-size: 10px; color: var(--text-tertiary); line-height: 1.4; }
+.input-box.full .label { margin: 0 0 6px; font-size: 12px; }
+.input-box.full .sub { font-size: 11px; }
+.input-box .control { margin-top: auto; }
+.input-box .control-stack { display: grid; grid-template-columns: 1fr; gap: 4px; margin-top: auto; }
+.private-note {
+  margin: 0 0 1rem;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.final-box {
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.25rem 1rem;
+  margin-bottom: 1rem;
+  border: 0.5px solid transparent;
+}
+.final-box.warn { background: var(--amber-bg); border-color: var(--amber-border); }
+.final-box.success { background: var(--teal-bg); border-color: var(--teal-border); }
+.final-box.danger { background: var(--red-bg); border-color: var(--red-border); }
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 0.5px solid rgba(0,0,0,0.1);
+}
+.status-label { font-size: 13px; font-weight: 500; }
+.status-badge {
+  font-size: 16px;
+  font-weight: 500;
+  padding: 4px 16px;
+  border-radius: 16px;
+  color: #FFFFFF;
+}
+.warn .status-label { color: var(--amber-text-bg); }
+.warn .status-badge { background: var(--amber-border); }
+.success .status-label { color: var(--teal-text-bg); }
+.success .status-badge { background: var(--teal-border); }
+.danger .status-label { color: var(--red-text-bg); }
+.danger .status-badge { background: var(--red-border); }
+.amount-row { display: flex; justify-content: space-between; align-items: baseline; }
+.amount-label { font-size: 12px; }
+.amount-value { font-size: 24px; font-weight: 500; }
+.warn .amount-label { color: var(--amber-text-bg); }
+.warn .amount-value { color: var(--amber-text-strong); }
+.success .amount-label { color: var(--teal-text-bg); }
+.success .amount-value { color: var(--teal-text-strong); }
+.danger .amount-label { color: var(--red-text-bg); }
+.danger .amount-value { color: var(--red-text-strong); }
+.final-note { margin: 8px 0 0; font-size: 12px; }
+.warn .final-note { color: var(--amber-text-bg); }
+.success .final-note { color: var(--teal-text-bg); }
+.danger .final-note { color: var(--red-text-bg); }
+.trigger-grid { display: grid; gap: 8px; }
+.trigger-box {
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+.trigger-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.trigger-title { font-size: 13px; font-weight: 500; }
+.trigger-status { font-size: 12px; padding: 2px 8px; border-radius: var(--radius-md); }
+.status-pass { background: var(--teal-bg); color: var(--teal-text-bg); }
+.status-fail { background: var(--red-bg); color: var(--red-text-bg); }
+.trigger-detail { margin: 0; font-size: 12px; color: var(--text-secondary); }
+.notes { margin-top: 1rem; padding: 12px 14px; background: var(--bg-secondary); border-radius: var(--radius-md); }
+.notes-title { margin: 0 0 6px; font-size: 12px; font-weight: 500; color: var(--text-primary); }
+.notes ul { margin: 0; padding-left: 18px; font-size: 11px; color: var(--text-secondary); line-height: 1.7; }
+.notes b { color: var(--text-primary); font-weight: 500; }
+.kbd-hint {
+  margin-top: 1rem;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+}
+.kbd-hint kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+@media (max-width: 600px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>피부양자 판독기</h1>
+    <p>국민건강보험법 시행규칙 별표1의2 · 자격 유지/박탈 자동 판정 + 사업소득 잔액 계산</p>
+  </div>
+
+  <p class="section-label">기본 조건</p>
+  <div class="grid-4">
+    <div class="small-box">
+      <p>① 사업자등록</p>
+      <select id="bizReg">
+        <option value="N">없음</option>
+        <option value="Y">있음</option>
+      </select>
+    </div>
+    <div class="small-box">
+      <p>② 주택임대소득</p>
+      <select id="rental">
+        <option value="N">없음</option>
+        <option value="Y">있음</option>
+      </select>
+    </div>
+    <div class="small-box">
+      <p>③ 장애·유공자</p>
+      <select id="disabled">
+        <option value="N">해당없음</option>
+        <option value="Y">해당</option>
+      </select>
+    </div>
+    <div class="small-box">
+      <p>④ 관계</p>
+      <select id="relation">
+        <option value="lineal">배우자·직계</option>
+        <option value="sibling">형제자매</option>
+      </select>
+    </div>
+  </div>
+  <p class="helper-text">② 주택임대소득 발생 시 금액·사업자등록 무관 즉시 박탈 · ④ 형제자매는 동거·미혼·65세이상/30세미만/장애 등 추가 요건 필요</p>
+
+  <p class="section-label">추가 변수 (이자배당 · 사적연금 · 재산)</p>
+  <div class="grid-3">
+
+    <div class="input-box">
+      <p class="label">① 이자+배당 합계</p>
+      <p class="sub">1천만 이하 합산제외 / 초과 전액 합산 / 2천만 초과 즉시 박탈</p>
+      <div class="control">
+        <input type="text" inputmode="numeric" id="finIncome" value="0" />
+      </div>
+    </div>
+
+    <div class="input-box amber">
+      <p class="label">② 사적연금 (연금저축·IRP)</p>
+      <p class="sub">세액공제분+운용수익만. 퇴직금 원금 제외</p>
+      <div class="control-stack">
+        <input type="text" inputmode="numeric" id="privatePension" value="0" />
+        <select id="privateMode">
+          <option value="separate">분리과세 (권장)</option>
+          <option value="comp">종합과세 선택</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="input-box">
+      <p class="label">③ 재산세 과세표준</p>
+      <p class="sub">토지·건물·주택·선박·항공기 합계 (직계 5.4억/9억 · 형제자매 1.8억)</p>
+      <div class="control">
+        <input type="text" inputmode="numeric" id="property" value="0" />
+      </div>
+    </div>
+
+  </div>
+
+  <p class="private-note" id="privateNote">사적연금 수령액 입력 시 과세방식에 따라 합산 여부가 결정됩니다.</p>
+
+  <p class="section-label">현재까지 발생한 소득금액 (단위: 원, 입력 시 콤마 자동)</p>
+  <div class="grid-2">
+
+    <div class="input-box full">
+      <p class="label">④ 현재 사업소득금액</p>
+      <p class="sub">주택임대소득 금액도 사업소득. 위 ②번 "있음" 선택 시 자동 박탈</p>
+      <div class="control">
+        <input type="text" inputmode="numeric" id="currentBiz" value="0" />
+      </div>
+    </div>
+
+    <div class="input-box full">
+      <p class="label">⑤ 공적연금(원천징수영수증 ⑪번 "총"연금수령액)</p>
+      <p class="sub">국민·공무원·사학·군인·별정우체국 (연금소득공제 차감 없이 전액 합산)</p>
+      <div class="control">
+        <input type="text" inputmode="numeric" id="pension" value="0" />
+      </div>
+    </div>
+
+    <div class="input-box full">
+      <p class="label">⑥ 근로소득(원천징수영수증 ㉑번 "총"급여액)</p>
+      <p class="sub">근로소득공제 차감 전 총급여액 (시행령 §41 ① 4호 단서)</p>
+      <div class="control">
+        <input type="text" inputmode="numeric" id="labor" value="0" />
+      </div>
+    </div>
+
+    <div class="input-box full">
+      <p class="label">⑦ 기타소득금액</p>
+      <p class="sub">필요경비 차감 후 소득금액</p>
+      <div class="control">
+        <input type="text" inputmode="numeric" id="other" value="0" />
+      </div>
+    </div>
+
+  </div>
+
+  <div id="result">
+
+    <div class="final-box" id="finalBox">
+      <div class="status-row">
+        <span class="status-label">피부양자 자격</span>
+        <span class="status-badge" id="statusBadge">-</span>
+      </div>
+      <div class="amount-row">
+        <span class="amount-label" id="amountLabel">-</span>
+        <span class="amount-value" id="amountValue">-</span>
+      </div>
+      <p class="final-note" id="finalNote">-</p>
+    </div>
+
+    <p class="section-label" style="margin-top:0">트리거별 판정 근거</p>
+
+    <div class="trigger-grid">
+      <div class="trigger-box">
+        <div class="trigger-head">
+          <span class="trigger-title">① 사업소득 자체 트리거 (1호 나목)</span>
+          <span id="trig1Status" class="trigger-status">-</span>
+        </div>
+        <p id="trig1Detail" class="trigger-detail">-</p>
+      </div>
+      <div class="trigger-box">
+        <div class="trigger-head">
+          <span class="trigger-title">② 합산소득 2,000만원 트리거 (1호 가목)</span>
+          <span id="trig2Status" class="trigger-status">-</span>
+        </div>
+        <p id="trig2Detail" class="trigger-detail">-</p>
+      </div>
+      <div class="trigger-box">
+        <div class="trigger-head">
+          <span class="trigger-title">③ 재산요건 트리거 (2호)</span>
+          <span id="trig3Status" class="trigger-status">-</span>
+        </div>
+        <p id="trig3Detail" class="trigger-detail">-</p>
+      </div>
+    </div>
+
+    <div class="notes">
+      <p class="notes-title">위젯 미반영 — 별도 점검 필요 항목</p>
+      <ul>
+        <li><b>부양요건(동거·비동거)</b> — 직계존속·직계비속은 동거·비동거 모두 인정. <b>형제자매는 동거 필수</b> + 미혼 + 65세 이상/30세 미만/장애인·국가유공자·보훈상이자 중 1 추가 요건 충족</li>
+        <li><b>부부 동반 판정</b> — 부부 소득은 합산하지 않음. 본인·배우자 <b>각자</b> 위 트리거 ①②③ 모두 충족 필요. 한쪽이라도 미충족 시 부부 동반 박탈 (시행규칙 별표1의2 제1호 라목)</li>
+        <li><b>금융소득 1,000만~2,000만 구간</b> — 분리과세 대상으로 종합소득세 신고의무는 없으나, 피부양자 소득판정에서는 <b>전액 합산</b>되어 박탈 트리거가 됨</li>
+        <li><b>공단 부과 반영시점</b> — 전전년도 소득자료 + 전년도 연금자료 기준 (시행령 §41 ③)</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="kbd-hint">
+    <kbd>Enter</kbd> ① 이자배당 → ② 사적연금 → ③ 재산 → ④ 사업소득 → ⑤ 공적연금 → ⑥ 근로 → ⑦ 기타 · <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 방향키 이동 · <kbd>Tab</kbd> 기본 이동 · 천단위 콤마 자동 입력
+  </div>
+
+</div>
+
+<script>
+const fmt = n => new Intl.NumberFormat('ko-KR').format(Math.round(n));
+const getNum = (id) => Number(document.getElementById(id).value.replace(/,/g, '')) || 0;
+
+function pensionDeduction(amt) {
+  let d;
+  if (amt <= 3500000) d = amt;
+  else if (amt <= 7000000) d = 3500000 + (amt - 3500000) * 0.4;
+  else if (amt <= 14000000) d = 4900000 + (amt - 7000000) * 0.2;
+  else d = 6300000 + (amt - 14000000) * 0.1;
+  return Math.min(d, 9000000);
+}
+
+const ENTER_ORDER = ['finIncome', 'privatePension', 'property', 'currentBiz', 'pension', 'labor', 'other'];
+
+const NAV_GRID = {
+  finIncome: { row: 0, col: 0 },
+  privatePension: { row: 0, col: 1 },
+  property: { row: 0, col: 2 },
+  currentBiz: { row: 1, col: 0 },
+  pension: { row: 1, col: 1 },
+  labor: { row: 2, col: 0 },
+  other: { row: 2, col: 1 }
+};
+
+function findArrow(currentId, dir) {
+  const cur = NAV_GRID[currentId];
+  if (!cur) return null;
+  const all = Object.entries(NAV_GRID).map(([id, pos]) => ({ id, ...pos }));
+  let candidates = [];
+  if (dir === 'up') candidates = all.filter(e => e.row < cur.row).sort((a, b) => (b.row - a.row) || (Math.abs(a.col - cur.col) - Math.abs(b.col - cur.col)));
+  else if (dir === 'down') candidates = all.filter(e => e.row > cur.row).sort((a, b) => (a.row - b.row) || (Math.abs(a.col - cur.col) - Math.abs(b.col - cur.col)));
+  else if (dir === 'left') candidates = all.filter(e => e.row === cur.row && e.col < cur.col).sort((a, b) => b.col - a.col);
+  else if (dir === 'right') candidates = all.filter(e => e.row === cur.row && e.col > cur.col).sort((a, b) => a.col - b.col);
+  return candidates[0] || null;
+}
+
+function gotoId(id) {
+  const el = document.getElementById(id);
+  if (el) { el.focus(); el.select(); }
+}
+
+ENTER_ORDER.forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const idx = ENTER_ORDER.indexOf(id);
+      if (idx >= 0 && idx < ENTER_ORDER.length - 1) gotoId(ENTER_ORDER[idx + 1]);
+      return;
+    }
+    let dir = null;
+    if (e.key === 'ArrowUp') dir = 'up';
+    else if (e.key === 'ArrowDown') dir = 'down';
+    else if (e.key === 'ArrowLeft' && el.selectionStart === 0 && el.selectionEnd === 0) dir = 'left';
+    else if (e.key === 'ArrowRight' && el.selectionStart === el.value.length && el.selectionEnd === el.value.length) dir = 'right';
+    if (dir) {
+      e.preventDefault();
+      const next = findArrow(id, dir);
+      if (next) gotoId(next.id);
+    }
+  });
+
+  el.addEventListener('input', () => {
+    const oldVal = el.value;
+    const cursorBefore = el.selectionStart;
+    const digitsBeforeCursor = oldVal.substring(0, cursorBefore).replace(/[^0-9]/g, '').length;
+    const cleaned = oldVal.replace(/[^0-9]/g, '');
+    const formatted = cleaned ? Number(cleaned).toLocaleString('ko-KR') : '';
+    el.value = formatted;
+    let newPos = 0, count = 0;
+    if (digitsBeforeCursor > 0) {
+      for (let i = 0; i < formatted.length; i++) {
+        if (/\d/.test(formatted[i])) {
+          count++;
+          if (count === digitsBeforeCursor) { newPos = i + 1; break; }
+        }
+      }
+    }
+    el.setSelectionRange(newPos, newPos);
+    calc();
+  });
+
+  el.addEventListener('focus', () => el.select());
+});
+
+['bizReg', 'rental', 'disabled', 'relation', 'privateMode'].forEach(id => {
+  document.getElementById(id).addEventListener('change', calc);
+});
+
+function calc() {
+  const bizReg = document.getElementById('bizReg').value === 'Y';
+  const rental = document.getElementById('rental').value === 'Y';
+  const disabled = document.getElementById('disabled').value === 'Y';
+  const relation = document.getElementById('relation').value;
+  const currentBiz = getNum('currentBiz');
+  const pension = getNum('pension');
+  const labor = getNum('labor');
+  const other = getNum('other');
+  const finIncome = getNum('finIncome');
+  const property = getNum('property');
+  const privatePension = getNum('privatePension');
+  const privateMode = document.getElementById('privateMode').value;
+
+  let privateIncomeAdded = 0;
+  let privateNoteText = '사적연금 수령액 입력 시 과세방식에 따라 합산 여부가 결정됩니다.';
+  if (privatePension > 0) {
+    if (privateMode === 'separate') {
+      if (privatePension <= 15000000) {
+        privateNoteText = '사적연금 ' + fmt(privatePension) + '원 ≤ 1,500만원 → 저율 분리과세 (55~69세 5.5% / 70~79세 4.4% / 80세~ 3.3%) · 합산소득 미포함';
+      } else {
+        privateNoteText = '사적연금 ' + fmt(privatePension) + '원 > 1,500만원 → 16.5% 분리과세 선택 · 합산소득 미포함 (소득세법 §64조의4)';
+      }
+    } else {
+      const deduction = pensionDeduction(privatePension);
+      privateIncomeAdded = Math.max(0, privatePension - deduction);
+      privateNoteText = '사적연금 종합과세 선택 → 연금소득공제 ' + fmt(deduction) + '원(한도 900만) 차감 후 ' + fmt(privateIncomeAdded) + '원이 합산소득에 포함됨';
+    }
+  }
+  document.getElementById('privateNote').textContent = privateNoteText;
+
+  let bizLimit, trig1Msg;
+  if (rental) { bizLimit = 0; trig1Msg = '주택임대소득 발생 → 사업자등록 무관 즉시 박탈'; }
+  else if (bizReg && !disabled) { bizLimit = 0; trig1Msg = '사업자등록 + 일반인 → 사업소득 1원이라도 발생 시 박탈'; }
+  else if (disabled) { bizLimit = 5000000; trig1Msg = '장애인·유공자·보훈상이자 → 사업소득 500만원 이하'; }
+  else { bizLimit = 5000000; trig1Msg = '사업자등록 없음 → 사업소득 500만원 이하'; }
+  const bizRemaining = Math.max(0, bizLimit - currentBiz);
+
+  const finAdded = finIncome > 10000000 ? finIncome : 0;
+  const fixedIncome = pension + labor + finAdded + other + currentBiz + privateIncomeAdded;
+  const totalRemaining = Math.max(0, 20000000 - fixedIncome);
+  let trig2Msg = '고정 합산소득 ' + fmt(fixedIncome) + '원 (공적연금 ' + fmt(pension) + ' + 근로 ' + fmt(labor) + ' + 금융 ' + fmt(finAdded);
+  if (finIncome > 0 && finIncome <= 10000000) trig2Msg += ' *1천만 이하 제외';
+  if (finIncome > 20000000) trig2Msg += ' *2천만 초과 금융소득종합과세';
+  trig2Msg += ' + 기타 ' + fmt(other) + ' + 기존 사업 ' + fmt(currentBiz);
+  if (privateIncomeAdded > 0) trig2Msg += ' + 사적연금(종합) ' + fmt(privateIncomeAdded);
+  else if (privatePension > 0) trig2Msg += ' · 사적연금 ' + fmt(privatePension) + '원 분리과세 합산제외';
+  trig2Msg += ')';
+
+  let propStatus, propMsg, propDQ = false;
+  if (relation === 'sibling') {
+    if (property <= 180000000) { propStatus = '충족'; propMsg = '과세표준 ' + fmt(property) + '원 ≤ 1.8억 (형제자매 기준)'; }
+    else { propStatus = '박탈'; propDQ = true; propMsg = '과세표준 ' + fmt(property) + '원 > 1.8억 (형제자매는 1.8억 이하만 가능)'; }
+  } else {
+    if (property <= 540000000) { propStatus = '충족'; propMsg = '과세표준 ' + fmt(property) + '원 ≤ 5.4억'; }
+    else if (property <= 900000000) {
+      if (fixedIncome <= 10000000) { propStatus = '충족'; propMsg = '과세표준 5.4억~9억 + 연소득 ' + fmt(fixedIncome) + '원 ≤ 1천만 → 충족'; }
+      else { propStatus = '박탈'; propDQ = true; propMsg = '과세표준 5.4억~9억이나 연소득 ' + fmt(fixedIncome) + '원 > 1천만 → 박탈'; }
+    } else { propStatus = '박탈'; propDQ = true; propMsg = '과세표준 ' + fmt(property) + '원 > 9억 → 박탈'; }
+  }
+
+  const isBizOver = bizReg && !disabled && currentBiz > 0;
+  const isBizLimitOver = !rental && !isBizOver && currentBiz > bizLimit;
+  const isIncomeOver = fixedIncome > 20000000;
+  const isFinanceOver = finIncome > 20000000;
+  const isDQ = rental || isBizOver || isBizLimitOver || isIncomeOver || isFinanceOver || propDQ;
+  const final = Math.min(bizRemaining, totalRemaining);
+
+  document.getElementById('result');
+  const finalBox = document.getElementById('finalBox');
+  const statusBadge = document.getElementById('statusBadge');
+  const amountLabel = document.getElementById('amountLabel');
+  const amountValue = document.getElementById('amountValue');
+  const finalNote = document.getElementById('finalNote');
+
+  finalBox.classList.remove('warn', 'success', 'danger');
+
+  if (isDQ) {
+    finalBox.classList.add('danger');
+    statusBadge.textContent = '✗ 박탈';
+    amountLabel.textContent = '박탈 사유';
+    amountValue.textContent = '';
+    let reason = '';
+    if (rental) reason = '주택임대소득 발생 — 사업자등록·금액 무관 즉시 박탈 (시행규칙 별표1의2 1호 나목 단서 1)';
+    else if (isBizOver) reason = '사업자등록 + 사업소득 ' + fmt(currentBiz) + '원 발생 — 1원 룰로 즉시 박탈';
+    else if (isBizLimitOver) reason = '사업소득 ' + fmt(currentBiz) + '원 > 한도 ' + fmt(bizLimit) + '원 — 면제 한도 초과';
+    else if (isFinanceOver) reason = '금융소득 ' + fmt(finIncome) + '원 > 2,000만원 — 금융소득종합과세 대상으로 즉시 박탈';
+    else if (isIncomeOver) reason = '합산소득 ' + fmt(fixedIncome) + '원 > 2,000만원 — 한도 초과';
+    else if (propDQ) reason = propMsg;
+    finalNote.textContent = reason;
+  } else if (final === 0) {
+    finalBox.classList.add('warn');
+    statusBadge.textContent = '△ 유지 (한도 도달)';
+    amountLabel.textContent = '추가 가능 사업소득 잔액';
+    amountValue.textContent = '0원';
+    finalNote.textContent = '한도 도달 — 추가 사업소득 1원이라도 발생 시 즉시 박탈';
+  } else {
+    finalBox.classList.add('success');
+    statusBadge.textContent = '✓ 유지';
+    amountLabel.textContent = '추가 가능 사업소득 잔액';
+    amountValue.textContent = fmt(final) + '원';
+    const binding = bizRemaining < totalRemaining ? '사업소득 자체 트리거 (' + fmt(bizRemaining) + '원)' : '합산소득 2,000만원 트리거 (' + fmt(totalRemaining) + '원)';
+    finalNote.textContent = '구속 트리거: ' + binding;
+  }
+
+  const setTrig = (sId, dId, status, detail, isFail) => {
+    const s = document.getElementById(sId);
+    const d = document.getElementById(dId);
+    s.textContent = status;
+    s.className = 'trigger-status ' + (isFail ? 'status-fail' : 'status-pass');
+    d.textContent = detail;
+  };
+
+  const t1Fail = isBizOver || isBizLimitOver || rental;
+  setTrig('trig1Status', 'trig1Detail',
+    t1Fail ? '박탈' : '잔여 ' + fmt(bizRemaining) + '원',
+    trig1Msg + ' (한도 ' + fmt(bizLimit) + '원 − 기존 ' + fmt(currentBiz) + '원)',
+    t1Fail);
+
+  setTrig('trig2Status', 'trig2Detail',
+    isIncomeOver || isFinanceOver ? '박탈' : '잔여 ' + fmt(totalRemaining) + '원',
+    trig2Msg,
+    isIncomeOver || isFinanceOver);
+
+  setTrig('trig3Status', 'trig3Detail', propStatus, propMsg, propDQ);
+}
+
+window.addEventListener('load', () => {
+  calc();
+  setTimeout(() => {
+    const first = document.getElementById('finIncome');
+    first.focus();
+    first.select();
+  }, 50);
+});
+</script>
+</body>
+</html>
