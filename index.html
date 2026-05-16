@@ -126,10 +126,6 @@ input[type="text"], select {
   font-size: 13px;
 }
 input[type="text"] { text-align: right; }
-input::placeholder {
-  color: var(--text-tertiary);
-  opacity: 1;
-}
 input:focus, select:focus {
   outline: 2px solid var(--focus-ring);
   outline-offset: -1px;
@@ -312,7 +308,7 @@ input:focus, select:focus {
   <header class="app-header">
     <h1>피부양자 판독기</h1>
     <div class="header-actions">
-      <span class="update-time" id="updateTime">업데이트 2026-05-16 13:24</span>
+      <span class="update-time" id="updateTime">업데이트 2026-05-16 15:16</span>
       <button class="icon-btn" id="reloadBtn" title="강제 새로고침 (페이지 리로드)" aria-label="강제 새로고침">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="23 4 23 10 17 10"></polyline>
@@ -372,7 +368,7 @@ input:focus, select:focus {
       <p class="label">① 이자+배당 합계</p>
       <p class="sub">1천만 이하 합산제외 / 초과 전액 합산 / 2천만 초과 즉시 박탈</p>
       <div class="control">
-        <input type="text" inputmode="numeric" id="finIncome" placeholder="0" />
+        <input type="text" inputmode="numeric" id="finIncome" value="0" />
       </div>
     </div>
 
@@ -380,11 +376,11 @@ input:focus, select:focus {
       <p class="label">② 사적연금 (연금저축·IRP)</p>
       <p class="sub">세액공제분+운용수익만. 퇴직금 원금 제외</p>
       <div class="control-stack">
-        <input type="text" inputmode="numeric" id="privatePension" placeholder="0" />
         <select id="privateMode">
           <option value="separate">분리과세 (권장)</option>
           <option value="comp">종합과세 선택</option>
         </select>
+        <input type="text" inputmode="numeric" id="privatePension" value="0" />
       </div>
     </div>
 
@@ -392,7 +388,7 @@ input:focus, select:focus {
       <p class="label">③ 재산세 과세표준</p>
       <p class="sub">토지·건물·주택·선박·항공기 합계 (직계 5.4억/9억 · 형제자매 1.8억)</p>
       <div class="control">
-        <input type="text" inputmode="numeric" id="property" placeholder="0" />
+        <input type="text" inputmode="numeric" id="property" value="0" />
       </div>
     </div>
 
@@ -407,7 +403,7 @@ input:focus, select:focus {
       <p class="label">④ 현재 사업소득금액</p>
       <p class="sub">주택임대소득 금액도 사업소득. 위 ②번 "있음" 선택 시 자동 박탈</p>
       <div class="control">
-        <input type="text" inputmode="numeric" id="currentBiz" placeholder="0" />
+        <input type="text" inputmode="numeric" id="currentBiz" value="0" />
       </div>
     </div>
 
@@ -415,7 +411,7 @@ input:focus, select:focus {
       <p class="label">⑤ 공적연금(원천징수영수증 ⑪번 "총"연금수령액)</p>
       <p class="sub">국민·공무원·사학·군인·별정우체국 (연금소득공제 차감 없이 전액 합산)</p>
       <div class="control">
-        <input type="text" inputmode="numeric" id="pension" placeholder="0" />
+        <input type="text" inputmode="numeric" id="pension" value="0" />
       </div>
     </div>
 
@@ -423,7 +419,7 @@ input:focus, select:focus {
       <p class="label">⑥ 근로소득(원천징수영수증 ㉑번 "총"급여액)</p>
       <p class="sub">근로소득공제 차감 전 총급여액 (시행령 §41 ① 4호 단서)</p>
       <div class="control">
-        <input type="text" inputmode="numeric" id="labor" placeholder="0" />
+        <input type="text" inputmode="numeric" id="labor" value="0" />
       </div>
     </div>
 
@@ -431,7 +427,7 @@ input:focus, select:focus {
       <p class="label">⑦ 기타소득금액</p>
       <p class="sub">필요경비 차감 후 소득금액</p>
       <div class="control">
-        <input type="text" inputmode="numeric" id="other" placeholder="0" />
+        <input type="text" inputmode="numeric" id="other" value="0" />
       </div>
     </div>
 
@@ -501,7 +497,7 @@ input:focus, select:focus {
 const fmt = n => new Intl.NumberFormat('ko-KR').format(Math.round(n));
 const getNum = (id) => Number(document.getElementById(id).value.replace(/,/g, '')) || 0;
 
-const UPDATE_TIME = '2026-05-16 13:24';
+const UPDATE_TIME = '2026-05-16 15:16';
 document.getElementById('updateTime').textContent = '업데이트 ' + UPDATE_TIME;
 
 function pensionDeduction(amt) {
@@ -537,12 +533,9 @@ function findArrow(currentId, dir) {
   return candidates[0] || null;
 }
 
-function focusInput(id) {
+function gotoId(id) {
   const el = document.getElementById(id);
-  if (!el) return;
-  el.focus();
-  // 값이 있을 때만 전체 선택, 빈 필드는 커서가 그대로 깜빡임
-  if (el.value !== '') el.select();
+  if (el) { el.focus(); el.select(); }
 }
 
 ENTER_ORDER.forEach(id => {
@@ -553,7 +546,7 @@ ENTER_ORDER.forEach(id => {
     if (e.key === 'Enter') {
       e.preventDefault();
       const idx = ENTER_ORDER.indexOf(id);
-      if (idx >= 0 && idx < ENTER_ORDER.length - 1) focusInput(ENTER_ORDER[idx + 1]);
+      if (idx >= 0 && idx < ENTER_ORDER.length - 1) gotoId(ENTER_ORDER[idx + 1]);
       return;
     }
     let dir = null;
@@ -564,7 +557,7 @@ ENTER_ORDER.forEach(id => {
     if (dir) {
       e.preventDefault();
       const next = findArrow(id, dir);
-      if (next) focusInput(next.id);
+      if (next) gotoId(next.id);
     }
   });
 
@@ -588,10 +581,7 @@ ENTER_ORDER.forEach(id => {
     calc();
   });
 
-  el.addEventListener('focus', () => {
-    // 값이 있을 때만 전체 선택, 빈 필드는 커서가 그대로 깜빡임
-    if (el.value !== '') el.select();
-  });
+  el.addEventListener('focus', () => el.select());
 });
 
 ['bizReg', 'rental', 'disabled', 'relation', 'privateMode'].forEach(id => {
@@ -612,14 +602,17 @@ function showToast(msg) {
 document.getElementById('resetBtn').addEventListener('click', () => {
   ENTER_ORDER.forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.value = '';
+    if (el) el.value = '0';
   });
   ['bizReg', 'rental', 'disabled', 'relation', 'privateMode'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.selectedIndex = 0;
   });
   calc();
-  setTimeout(() => focusInput('finIncome'), 50);
+  setTimeout(() => {
+    const first = document.getElementById('finIncome');
+    if (first) { first.focus(); first.select(); }
+  }, 50);
   showToast('초기화되었습니다');
 });
 
@@ -751,7 +744,11 @@ function calc() {
 
 window.addEventListener('load', () => {
   calc();
-  setTimeout(() => focusInput('finIncome'), 50);
+  setTimeout(() => {
+    const first = document.getElementById('finIncome');
+    first.focus();
+    first.select();
+  }, 50);
 });
 </script>
 </body>
