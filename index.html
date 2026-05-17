@@ -56,6 +56,12 @@ body {
   gap: 8px;
   flex-wrap: nowrap;
 }
+.title-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
 .app-header h1 {
   margin: 0;
   font-size: 17px;
@@ -94,6 +100,8 @@ body {
 .icon-btn:active { transform: scale(0.92); }
 .icon-btn svg { width: 18px; height: 18px; }
 .icon-btn.reset-btn:hover { color: var(--red-border); }
+.icon-btn.print-btn { width: 26px; height: 26px; }
+.icon-btn.print-btn svg { width: 16px; height: 16px; }
 
 /* ============ 서브헤더 ============ */
 .subheader {
@@ -288,6 +296,8 @@ input:focus, select:focus {
   .update-time { font-size: 11px; }
   .icon-btn { width: 28px; height: 28px; }
   .icon-btn svg { width: 16px; height: 16px; }
+  .icon-btn.print-btn { width: 24px; height: 24px; }
+  .icon-btn.print-btn svg { width: 14px; height: 14px; }
 
   .grid-4 { gap: 4px; }
   .small-box { padding: 5px 6px; }
@@ -300,15 +310,67 @@ input:focus, select:focus {
 @media (max-width: 360px) {
   .update-time { display: none; }
 }
+
+/* ============ 인쇄 ============ */
+@media print {
+  @page { size: A4; margin: 1cm; }
+  body {
+    background: #FFFFFF;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  .container { max-width: none; padding: 0; }
+
+  /* 버튼·단축키 안내 숨김 */
+  .header-actions .icon-btn,
+  .kbd-hint,
+  .toast { display: none !important; }
+
+  /* 헤더 간소화 */
+  .app-header { margin-bottom: 0.75rem; padding: 0; }
+  .header-actions { gap: 0; }
+
+  /* 입력값 인쇄 가독성 (배경/보더 유지) */
+  input[type="text"], select {
+    border: 0.5px solid var(--border) !important;
+    background: #FFFFFF !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  select { padding-right: 8px; background-image: none !important; }
+
+  /* 박스 페이지 분할 방지 */
+  .final-box, .trigger-box, .input-box, .small-box, .notes {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* 결과 박스 배경색 강제 출력 */
+  .final-box.warn { background: var(--amber-bg) !important; }
+  .final-box.success { background: var(--teal-bg) !important; }
+  .final-box.danger { background: var(--red-bg) !important; }
+  .status-badge,
+  .trigger-status { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 </style>
 </head>
 <body>
 <div class="container">
 
   <header class="app-header">
-    <h1>피부양자 판독기</h1>
+    <div class="title-group">
+      <h1>피부양자 판독기</h1>
+      <button class="icon-btn print-btn" id="printBtn" title="인쇄" aria-label="인쇄">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+      </button>
+    </div>
     <div class="header-actions">
-      <span class="update-time" id="updateTime">업데이트 2026-05-16 15:16</span>
+      <span class="update-time" id="updateTime">업데이트 2026-05-17 10:20</span>
       <button class="icon-btn" id="reloadBtn" title="강제 새로고침 (페이지 리로드)" aria-label="강제 새로고침">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="23 4 23 10 17 10"></polyline>
@@ -376,11 +438,11 @@ input:focus, select:focus {
       <p class="label">② 사적연금 (연금저축·IRP)</p>
       <p class="sub">세액공제분+운용수익만. 퇴직금 원금 제외</p>
       <div class="control-stack">
+        <input type="text" inputmode="numeric" id="privatePension" value="0" />
         <select id="privateMode">
           <option value="separate">분리과세 (권장)</option>
           <option value="comp">종합과세 선택</option>
         </select>
-        <input type="text" inputmode="numeric" id="privatePension" value="0" />
       </div>
     </div>
 
@@ -497,7 +559,7 @@ input:focus, select:focus {
 const fmt = n => new Intl.NumberFormat('ko-KR').format(Math.round(n));
 const getNum = (id) => Number(document.getElementById(id).value.replace(/,/g, '')) || 0;
 
-const UPDATE_TIME = '2026-05-16 15:16';
+const UPDATE_TIME = '2026-05-17 10:20';
 document.getElementById('updateTime').textContent = '업데이트 ' + UPDATE_TIME;
 
 function pensionDeduction(amt) {
@@ -590,6 +652,10 @@ ENTER_ORDER.forEach(id => {
 
 document.getElementById('reloadBtn').addEventListener('click', () => {
   location.reload();
+});
+
+document.getElementById('printBtn').addEventListener('click', () => {
+  window.print();
 });
 
 function showToast(msg) {
